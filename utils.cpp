@@ -15,6 +15,8 @@ static void red_select(Mat& img, int lowerbound, int upperbound,
                        Mat& thresholded);
 static void warp(Mat& binary, double bottom_width, double mid_width,
                  double height_pct, Mat& warped, Mat& Minv);
+static void select_roi(Mat& img, double bottom_width, double mid_width,
+                       double height_pct, double bottom_trim);
 
 
 void warp_image(Mat& image, Mat& mtx, Mat& distCoeffs,
@@ -27,6 +29,13 @@ void warp_image(Mat& image, Mat& mtx, Mat& distCoeffs,
   Mat undist;
   undistort(image, undist, mtx, distCoeffs);
 
+  double bottom_width = 0.76;
+  double mid_width = 0.2;
+  double height_pct = 0.68;
+  double bottom_trim = 0.935;
+  select_roi(undist, bottom_width, mid_width,
+             height_pct, bottom_trim);
+
   Mat v_channel;
   hsv_select(undist, 180, 255, v_channel);
   Mat r_channel;
@@ -34,10 +43,6 @@ void warp_image(Mat& image, Mat& mtx, Mat& distCoeffs,
 
   Mat binary = Mat::zeros(Size(image.cols, image.rows), CV_8UC1);
   bitwise_and(r_channel, v_channel, binary);
-
-  float bottom_width = 0.76;
-  float mid_width = 0.2;
-  float height_pct = 0.68;
 
   warp(binary, bottom_width, mid_width,
        height_pct, warpedImage, mtxInverse);
@@ -87,4 +92,29 @@ static void warp(Mat& img, double bottom_width, double mid_width,
   Minv = getPerspectiveTransform(dst, src);
 
   warpPerspective(img, warped, M, img.size());
+}
+
+static void select_roi(Mat& img, double bottom_width, double mid_width,
+                       double height_pct, double bottom_trim) {
+  int width = img.cols;
+  int height = img.rows;
+  int num_points = 4;
+  int num_polygons = 1;
+
+  Point corners[1][num_points];
+  corners[0][0] = Point(width * (0.5-mid_width/2), height * height_pct);
+  corners[0][1] = Point(width * (0.5+mid_width/2), height * height_pct);
+  corners[0][2] = Point(width * (0.5+bottom_width/2), height * bottom_trim);
+  corners[0][3] = Point(width * (0.5-bottom_width/2), height * bottom_trim);
+  const Point *corner_list[1] = {corners[0]};
+
+  Mat mask = Mat::zeros(img.rows, img.cols, img.type());
+  fillPoly(mask, corner_list, &num_points, num_polygons,
+           Scalar(255, 255, 255));
+  Mat imgCopy = img;
+  bitwise_and(imgCopy, mask, img);
+
+//  namedWindow("ROI");
+//  imshow("ROI", img);
+//  waitKey(0);
 }
