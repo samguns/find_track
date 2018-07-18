@@ -8,13 +8,14 @@
 using namespace cv;
 using namespace std;
 
+#define OFFSET_RATIO    0.25
 
 static void hsv_select(Mat& img, int lowerbound, int upperbound,
                        Mat& thresholded);
 static void red_select(Mat& img, int lowerbound, int upperbound,
                        Mat& thresholded);
 static void warp(Mat& binary, double bottom_width, double mid_width,
-                 double height_pct, Mat& warped, Mat& Minv);
+                 double height_pct, double bottom_trim, Mat& warped, Mat& Minv);
 static void select_roi(Mat& img, double bottom_width, double mid_width,
                        double height_pct, double bottom_trim);
 
@@ -29,7 +30,7 @@ void warp_image(Mat& image, Mat& mtx, Mat& distCoeffs,
   Mat undist;
   undistort(image, undist, mtx, distCoeffs);
 
-  double bottom_width = 0.76;
+  double bottom_width = (1 - OFFSET_RATIO);
   double mid_width = 0.2;
   double height_pct = 0.68;
   double bottom_trim = 0.935;
@@ -45,7 +46,7 @@ void warp_image(Mat& image, Mat& mtx, Mat& distCoeffs,
   bitwise_and(r_channel, v_channel, binary);
 
   warp(binary, bottom_width, mid_width,
-       height_pct, warpedImage, mtxInverse);
+       height_pct, bottom_trim, warpedImage, mtxInverse);
 }
 
 
@@ -70,13 +71,12 @@ static void red_select(Mat& img, int lowerbound, int upperbound,
 }
 
 static void warp(Mat& img, double bottom_width, double mid_width,
-                 double height_pct, Mat& warped, Mat& Minv) {
+                 double height_pct, double bottom_trim, Mat& warped, Mat& Minv) {
   Point2f src[4];
   Point2f dst[4];
   int width = img.cols;
   int height = img.rows;
-  double bottom_trim = 0.935;
-  double offset = (double)width * 0.25;
+  double offset = (double)width * OFFSET_RATIO;
 
   src[0] = Point2f(width * (0.5-mid_width/2), height * height_pct);
   src[1] = Point2f(width * (0.5+mid_width/2), height * height_pct);
