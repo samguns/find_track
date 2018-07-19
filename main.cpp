@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "utils.h"
+#include "tracker.h"
 
 using namespace cv;
 using namespace std;
@@ -22,9 +23,12 @@ int main() {
   Mat warped, mInv;
   warp_image(testImg, mtx, distCoeffs, warped, mInv);
 
-  namedWindow("warp");
-  imshow("warp", warped);
-  waitKey(0);
+  tracker line_tracker(50, 80, 100, 1, 1, 15);
+  line_tracker.unitTest();
+
+//  namedWindow("warp");
+//  imshow("warp", warped);
+//  waitKey(0);
 
   return 0;
 }
