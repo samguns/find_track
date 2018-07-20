@@ -24,6 +24,8 @@ class tracker {
   double mXmPerPixel;
   double mYmPerPixel;
   double mSmoothFactor;
+
+  cv::Mat convolve(cv::Mat& f_1d, cv::Mat& g_1d);
 };
 
 #endif //FIND_TRACK_TRACKER_H
