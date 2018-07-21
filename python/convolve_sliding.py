@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
+np.set_printoptions(threshold=np.nan)
 
 warped = mpimg.imread("warped_example.jpg")
 window_width = 50

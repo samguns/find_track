@@ -1,7 +1,10 @@
 //
 // Created by Sam on 2018/7/19.
 //
-
+#include "Eigen/Dense"
+#include <opencv2/core/eigen.hpp>
+#include <iostream>
+#include <algorithm>
 #include "tracker.h"
 
 using namespace std;
@@ -24,7 +27,7 @@ bool tracker::find_window_centroids(cv::Mat &img) {
   int image_width = img.cols;
   int image_height = img.rows;
 
-  Mat window = Mat::ones(1, mWindowWidth, CV_32F);
+  int offset = mWindowWidth / 2;
 
   /* Get bottom 3/4 quarter of the img */
   int w = image_width / 2;
@@ -35,28 +38,76 @@ bool tracker::find_window_centroids(cv::Mat &img) {
   img(rectLeft).copyTo(leftQ);
   img(rectRight).copyTo(rightQ);
 
-  /* Squash 2-D array into 1-D signals for convolution */
-  Mat l_sum, r_sum;
-  reduce(leftQ, l_sum, 0, REDUCE_SUM, CV_32F);
-  reduce(rightQ, r_sum, 0, REDUCE_SUM, CV_32F);
+  Matrix<int, Dynamic, Dynamic> window(1, mWindowWidth);
+  window.setOnes();
 
-  Mat l_conv = convolve(window, l_sum);
-  Mat r_conv = convolve(window, r_sum);
+  Matrix<int, Dynamic, Dynamic> eigenLeftQ;
+  cv2eigen(leftQ, eigenLeftQ);
+  Matrix<int, Dynamic, Dynamic> l_sum = eigenLeftQ.colwise().sum();
+  Matrix<int, Dynamic, Dynamic> l_conv = convolve(l_sum, window);
+  Matrix<int, Dynamic, Dynamic>::Index maxRow, leftCenter, rightCenter;
+  l_conv.maxCoeff(&maxRow, &leftCenter);
+
+  Matrix<int, Dynamic, Dynamic> eigenRightQ;
+  cv2eigen(rightQ, eigenRightQ);
+  Matrix<int, Dynamic, Dynamic> r_sum = eigenRightQ.colwise().sum();
+  Matrix<int, Dynamic, Dynamic> r_conv = convolve(r_sum, window);
+  r_conv.maxCoeff(&maxRow, &rightCenter);
+
+  leftCenter -= offset;
+  rightCenter -= offset;
+  rightCenter += image_width / 2;
+  mRecentCentroids.push_back(Point(leftCenter, rightCenter));
+
+  for (int level = 1; level < image_height/mWindowHeight; level++) {
+    int y = image_height - (level+1) * mWindowHeight;
+    Rect rectLayer(0, y, image_width, mWindowHeight);
+    Mat subImage;
+    img(rectLayer).copyTo(subImage);
+
+    Matrix<int, Dynamic, Dynamic> eigenImageLayer;
+    cv2eigen(subImage, eigenImageLayer);
+    Matrix<int, Dynamic, Dynamic> image_layer = eigenImageLayer.colwise().sum();
+    Matrix<int, Dynamic, Dynamic> conv_signal = convolve(image_layer, window);
+    int min_index = max(int(leftCenter + offset - mMargin), 0);
+    int max_index = min(int(leftCenter + offset + mMargin), image_width);
+    int cols = max_index - min_index;
+    Matrix<int, Dynamic, Dynamic> leftConv(1, cols);
+    leftConv = conv_signal.block(0, min_index, 1, cols);
+
+    leftConv.maxCoeff(&maxRow, &leftCenter);
+    leftCenter = leftCenter + min_index - offset;
+
+    min_index = max(int(rightCenter + offset - mMargin), 0);
+    max_index = min(int(rightCenter + offset + mMargin), image_width);
+    cols = max_index - min_index;
+    Matrix<int, Dynamic, Dynamic> rightConv(1, cols);
+    rightConv = conv_signal.block(0, min_index, 1, cols);
+    rightConv.maxCoeff(&maxRow, &rightCenter);
+    rightCenter = rightCenter + min_index - offset;
+
+    mRecentCentroids.push_back(Point(leftCenter, rightCenter));
+  }
 
   return true;
 }
 
 void tracker::unitTest() {
-  Mat test(1, 3, CV_32FC1);
-  test.at<double>(0, 0) = 9;
-  test.at<double>(0, 1) = 12;
-  test.at<double>(0, 2) = 15;
-  Mat conv = Mat::ones(1, 2, CV_32FC1);
-  cout << "test " << test << endl;
-  cout << "conv " << conv << endl;
-  convolve(test, conv);
+//  Matrix<int, Dynamic, Dynamic> window(1, 2);
+//  window.setOnes();
+//
+//  Matrix<int, Dynamic, Dynamic> test(1, 3);
+//  test << 9, 12, 15;
+//  cout << window << endl;
+//  cout << test << endl;
+//
+//  Matrix<int, Dynamic, Dynamic> l_conv = convolve(test, window);
+//  cout << l_conv << endl;
+
   Mat img = imread("python/warped_example.jpg");
-  find_window_centroids(img);
+  Mat gray;
+  cvtColor(img, gray, CV_BGR2GRAY);
+  find_window_centroids(gray);
 }
 
 
@@ -65,25 +116,36 @@ Mat tracker::convolve(Mat &f_1d, Mat &g_1d) {
   int const ng = g_1d.cols;
   int const n = nf + ng -1;
 
-  cout << "f_1d " << f_1d << endl;
-  cout << "g_1d " << g_1d << endl;
-
-  Mat out = Mat::zeros(1, n, CV_32FC1);
+  Mat out = Mat::zeros(1, n, CV_32S);
   for (int i = 0; i < n; i++) {
     int const jmn = (i >= ng - 1) ? i - (ng - 1) : 0;
     int const jmx = (i < ng - 1) ? i : nf - 1;
 
     for (int j = jmn; j <= jmx; j++) {
-      cout << "i " << i << " j " << j << endl;
-      cout << "out " << out << endl;
-      cout << "f_1d.at<double>(0, j) " << f_1d.at<double>(0, j) << endl;
-      cout << "g_1d.at<double>(0, i-j) " << g_1d.at<double>(0, i-j) << endl;
-      //out.ptr<double>(0)[i] += (f_1d.ptr<double>(0)[j] * g_1d.ptr<double>(0)[i-j]);
-      out.at<double>(0, i) += (f_1d.at<double>(0, j) * g_1d.at<double>(0, i-j));
+      out.at<int>(0, i) += (f_1d.at<int>(0, j) * g_1d.at<int>(0, i-j));
     }
   }
 
-  cout << "out: " << endl << out << endl;
+  return out;
+}
+
+Matrix<int, Dynamic, Dynamic> tracker::convolve(Matrix<int, Dynamic, Dynamic> &input,
+                                                Matrix<int, Dynamic, Dynamic> &kernel) {
+  int const nInput = input.cols();
+  int const nKernel = kernel.cols();
+  int const n = nInput + nKernel - 1;
+
+  Matrix<int, Dynamic, Dynamic> out(1, n);
+  out.setZero();
+
+  for (int i = 0; i < n; i++) {
+    int const startk = i >= nInput ? i - nInput + 1 : 0;
+    int const endk = i < nKernel ? i : nKernel - 1;
+
+    for (int k = startk; k <= endk; k++) {
+      out(0, i) += (input(0, i-k) * kernel(0, k));
+    }
+  }
 
   return out;
 }
