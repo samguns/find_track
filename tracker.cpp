@@ -1,11 +1,12 @@
 //
 // Created by Sam on 2018/7/19.
 //
-#include "Eigen/Dense"
+#include <eigen3/Eigen/Dense>
 #include <opencv2/core/eigen.hpp>
 #include <iostream>
 #include <algorithm>
 #include "tracker.h"
+#include "utils.h"
 
 using namespace std;
 using namespace cv;
@@ -108,6 +109,19 @@ void tracker::unitTest() {
   Mat gray;
   cvtColor(img, gray, CV_BGR2GRAY);
   find_window_centroids(gray);
+
+  VectorXd res_yval = VectorXd::LinSpaced(9, 40, 680);
+  res_yval.reverseInPlace();
+
+  VectorXd leftx(9);
+  VectorXd rightx(9);
+  for (int level = 0; level < mRecentCentroids.size(); level++) {
+    leftx[level] = mRecentCentroids[level].x;
+    rightx[level] = mRecentCentroids[level].y;
+  }
+
+  VectorXd left_fit = polyfit(res_yval, leftx, 2);
+  cout << left_fit.transpose() << endl;
 }
 
 

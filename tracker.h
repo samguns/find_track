@@ -5,7 +5,7 @@
 #ifndef FIND_TRACK_TRACKER_H
 #define FIND_TRACK_TRACKER_H
 
-#include "Eigen/Dense"
+#include <eigen3/Eigen/Dense>
 #include <opencv2/opencv.hpp>
 
 class tracker {

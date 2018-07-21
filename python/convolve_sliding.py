@@ -34,7 +34,7 @@ def find_window_centroids(image, window_width, window_height, margin):
     window_centroids.append((l_center, r_center))
 
     for level in range(1, (int)(image_height / window_height)):
-        image_layer = np.sum(image[int(image_height - (level+1) * window_height): int(image_width - level * window_height), :], axis=0)
+        image_layer = np.sum(image[int(image_height - (level+1) * window_height): int(image_height - level * window_height), :], axis=0)
         conv_signal = np.convolve(window, image_layer)
         offset = window_width / 2
         l_min_index = int(max(l_center + offset - margin, 0))
@@ -71,6 +71,19 @@ if len(window_centroids) > 0:
 else:
     output = np.array(cv2.merge((warped, warped, warped)), np.uint8)
 
+leftx = []
+rightx = []
+for level in range(0, len(window_centroids)):
+    leftx.append(window_centroids[level][0])
+    rightx.append(window_centroids[level][1])
+
+warped_height = warped.shape[0]
+yvals = range(0, warped_height)
+res_yvals = np.arange(warped_height-(window_height/2), 0, -window_height)
+left_fit = np.polyfit(res_yvals, leftx, 2)
+
+left_fitx = left_fit[0] * yvals * yvals + left_fit[1] * yvals + left_fit[2]
+left_fitx = np.array(left_fitx, np.int32)
 
 plt.imshow(output)
 plt.show()
