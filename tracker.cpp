@@ -94,6 +94,16 @@ bool tracker::find_window_centroids(cv::Mat &img) {
 }
 
 void tracker::unitTest() {
+//  vector<Point> a, b;
+//  a.emplace_back(1, 2);
+//  a.emplace_back(3, 4);
+//
+//  b.emplace_back(5, 6);
+//  b.emplace_back(7, 8);
+//
+//  cout << "a total " << accumulate(a.begin(), a.end(), Point(0, 0)) << endl;
+//  cout << "b total " << accumulate(b.begin(), b.end(), Point(0, 0)) << endl;
+
 //  Matrix<int, Dynamic, Dynamic> window(1, 2);
 //  window.setOnes();
 //
@@ -124,24 +134,6 @@ void tracker::unitTest() {
   cout << left_fit.transpose() << endl;
 }
 
-
-Mat tracker::convolve(Mat &f_1d, Mat &g_1d) {
-  int const nf = f_1d.cols;
-  int const ng = g_1d.cols;
-  int const n = nf + ng -1;
-
-  Mat out = Mat::zeros(1, n, CV_32S);
-  for (int i = 0; i < n; i++) {
-    int const jmn = (i >= ng - 1) ? i - (ng - 1) : 0;
-    int const jmx = (i < ng - 1) ? i : nf - 1;
-
-    for (int j = jmn; j <= jmx; j++) {
-      out.at<int>(0, i) += (f_1d.at<int>(0, j) * g_1d.at<int>(0, i-j));
-    }
-  }
-
-  return out;
-}
 
 Matrix<int, Dynamic, Dynamic> tracker::convolve(Matrix<int, Dynamic, Dynamic> &input,
                                                 Matrix<int, Dynamic, Dynamic> &kernel) {

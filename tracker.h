@@ -27,7 +27,6 @@ class tracker {
 
   std::vector<cv::Point> mRecentCentroids;
 
-  cv::Mat convolve(cv::Mat& f_1d, cv::Mat& g_1d);
   Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> convolve(
       Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& input,
       Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& kernel
