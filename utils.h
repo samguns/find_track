@@ -6,7 +6,7 @@
 #define FIND_TRACK_UTILS_H
 
 #include <opencv2/opencv.hpp>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 void warp_image(cv::Mat& image, cv::Mat& mtx, cv::Mat& distCoeffs,
                 cv::Mat& warpedImage, cv::Mat& mtxInverse);

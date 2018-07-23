@@ -1,7 +1,7 @@
 //
 // Created by Sam on 2018/7/19.
 //
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <opencv2/core/eigen.hpp>
 #include <iostream>
 #include <algorithm>
