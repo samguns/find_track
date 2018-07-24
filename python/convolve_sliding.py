@@ -37,11 +37,11 @@ def find_window_centroids(image, window_width, window_height, margin):
         image_layer = np.sum(image[int(image_height - (level+1) * window_height): int(image_height - level * window_height), :], axis=0)
         conv_signal = np.convolve(window, image_layer)
         offset = window_width / 2
-        l_min_index = int(max(l_center + offset - margin, 0))
+        l_min_index = int(max(l_center - offset - margin, 0))
         l_max_index = int(min(l_center + offset + margin, image_width))
         l_center = np.argmax(conv_signal[l_min_index : l_max_index]) + l_min_index - offset
 
-        r_min_index = int(max(r_center + offset - margin, 0))
+        r_min_index = int(max(r_center - offset - margin, 0))
         r_max_index = int(min(r_center + offset + margin, image_width))
         r_center = np.argmax(conv_signal[r_min_index : r_max_index]) + r_min_index - offset
 

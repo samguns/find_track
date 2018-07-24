@@ -72,7 +72,7 @@ def process_image(image):
 
 
 if __name__ == "__main__":
-    videos = ['project_video.mp4']
+    videos = ['project_video.mp4', 'challenge_video.mp4', 'harder_challenge_video.mp4']
 
     for input_video in videos:
         lane_identifier = LaneIdentifier(smooth_factor=15)
