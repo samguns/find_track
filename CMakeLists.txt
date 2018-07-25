@@ -10,3 +10,7 @@ find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 add_executable(${PROJECT_NAME} main.cpp utils.cpp tracker.cpp tracker.h)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 target_link_libraries (${PROJECT_NAME} Eigen3::Eigen)
+
+add_executable(play play_ground.cpp utils.cpp tracker.cpp tracker.h)
+target_link_libraries(play ${OpenCV_LIBS})
+target_link_libraries (play Eigen3::Eigen)
