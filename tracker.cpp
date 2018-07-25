@@ -21,7 +21,10 @@ tracker::tracker(int win_width, int win_height, int margin,
       mXmPerPixel(xmpp),
       mYmPerPixel(ympp),
       mSmoothFactor(smooth_factor)
-{}
+{
+  mLeftFit.setZero();
+  mRightFit.setZero();
+}
 
 
 bool tracker::find_window_centroids(cv::Mat &img) {
@@ -58,10 +61,12 @@ bool tracker::find_window_centroids(cv::Mat &img) {
   leftCenter -= offset;
   rightCenter -= offset;
   rightCenter += image_width / 2;
+  int y = image_height - (mWindowHeight/2);
+  reject_anomaly(leftCenter, rightCenter, y);
   mRecentCentroids.push_back(Point(leftCenter, rightCenter));
 
   for (int level = 1; level < image_height/mWindowHeight; level++) {
-    int y = image_height - (level+1) * mWindowHeight;
+    y = image_height - (level+1) * mWindowHeight;
     Rect rectLayer(0, y, image_width, mWindowHeight);
     Mat subImage;
     img(rectLayer).copyTo(subImage);
@@ -87,6 +92,7 @@ bool tracker::find_window_centroids(cv::Mat &img) {
     rightConv.maxCoeff(&maxRow, &rightCenter);
     rightCenter = rightCenter + min_index - offset;
 
+    reject_anomaly(leftCenter, rightCenter, y + mWindowHeight/2);
     mRecentCentroids.push_back(Point(leftCenter, rightCenter));
   }
 
@@ -154,4 +160,26 @@ Matrix<int, Dynamic, Dynamic> tracker::convolve(Matrix<int, Dynamic, Dynamic> &i
   }
 
   return out;
+}
+
+void tracker::reject_anomaly(Matrix<int, Dynamic, Dynamic>::Index &l_center,
+                             Matrix<int, Dynamic, Dynamic>::Index &r_center,
+                             int y) {
+  if (!mLeftFit.isZero(0)) {
+    double ref_l_center = polyeval(mLeftFit, (double)y);
+
+    if ((l_center < (ref_l_center - mMargin)) ||
+        (l_center > (ref_l_center + mMargin))) {
+      l_center = ref_l_center;
+    }
+  }
+
+  if (!mRightFit.isZero(0)) {
+    double ref_r_center = polyeval(mRightFit, (double)y);
+
+    if ((r_center < (ref_r_center - mMargin)) ||
+        (r_center > (ref_r_center + mMargin))) {
+      r_center = ref_r_center;
+    }
+  }
 }

@@ -24,6 +24,8 @@ class tracker {
   double mXmPerPixel;
   double mYmPerPixel;
   double mSmoothFactor;
+  Eigen::VectorXd mLeftFit;
+  Eigen::VectorXd mRightFit;
 
   std::vector<cv::Point> mRecentCentroids;
 
@@ -31,6 +33,10 @@ class tracker {
       Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& input,
       Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& kernel
       );
+
+  void reject_anomaly(Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>::Index& l_center,
+                      Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>::Index& r_center,
+                      int y);
 };
 
 #endif //FIND_TRACK_TRACKER_H
