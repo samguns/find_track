@@ -7,6 +7,7 @@
 
 #include <Eigen/Dense>
 #include <opencv2/opencv.hpp>
+#include <list>
 
 class tracker {
  public:
@@ -26,6 +27,9 @@ class tracker {
   double mSmoothFactor;
   Eigen::VectorXd mLeftFit;
   Eigen::VectorXd mRightFit;
+
+  std::vector<std::list<Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>::Index>> mRecentLeftCentroids;
+  std::vector<std::list<Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>::Index>> mRecentRightCentroids;
 
   std::vector<cv::Point> mRecentCentroids;
 
